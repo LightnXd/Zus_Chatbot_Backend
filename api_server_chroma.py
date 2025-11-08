@@ -54,7 +54,7 @@ except Exception as e:
 
 # Initialize Chroma Vector Store (LOCAL)
 try:
-    embeddings = OllamaEmbeddings(model="mxbai-embed-large")
+    embeddings = OllamaEmbeddings(model="nomic-embed-text")
     
     # Load local Chroma database
     vectorstore = Chroma(

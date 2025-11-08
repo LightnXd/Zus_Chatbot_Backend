@@ -54,8 +54,8 @@ try:
     import json
     
     # Initialize embeddings
-    print("Connecting to Ollama (mxbai-embed-large)...")
-    embeddings = OllamaEmbeddings(model="mxbai-embed-large")
+    print("Connecting to Ollama (nomic-embed-text)...")
+    embeddings = OllamaEmbeddings(model="nomic-embed-text")
     
     # Create vector store
     db_location = "./chroma_db"
