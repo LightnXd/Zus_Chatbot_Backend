@@ -10,9 +10,13 @@ import json
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment
+# Load environment (optional - Railway provides env vars directly)
 env_path = Path(__file__).parent / ".env.backend"
-load_dotenv(env_path)
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"✅ Loaded environment from {env_path}")
+else:
+    print("ℹ️  Using system environment variables (Railway/production mode)")
 
 print("=" * 60)
 print("  ZUS DRINKWARE BACKEND SETUP")
