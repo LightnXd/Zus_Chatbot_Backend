@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+venv311/
+.venv311/
+ENV/
+env/
+.env
+.env.local
+
+# Chroma
+chroma_db/
+
+# Node
+node_modules/
+.npm
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env.backend
+.env.production
+
+# Data - IMPORTANT: Do NOT ignore data/ folder!
+# The data/ folder contains committed files that backend needs
+# Only ignore temporary/raw data if you have it
+data/raw/
+data/temp/

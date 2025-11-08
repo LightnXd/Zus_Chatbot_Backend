@@ -1,0 +1,10 @@
+{
+  "region": "kuala-lumpur-selangor",
+  "total_outlets": 258,
+  "pages_scraped": 26,
+  "scraped_at": "2025-11-02T09:31:48.069408",
+  "errors": 0,
+  "output_files": {
+    "jsonl": "data\\outlets_kuala_lumpur_selangor.jsonl"
+  }
+}
