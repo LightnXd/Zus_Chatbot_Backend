@@ -75,7 +75,7 @@ except Exception as e:
 
 # Initialize Supabase
 try:
-    from database import OutletQueries
+    from database.outlet_queries import OutletQueries
     outlet_queries = OutletQueries()
     logger.info("✅ Supabase outlet queries initialized")
 except Exception as e:
@@ -348,7 +348,8 @@ if __name__ == "__main__":
     import uvicorn
     
     host = os.getenv("API_HOST", "0.0.0.0")
-    port = int(os.getenv("API_PORT", 8001))  # Changed default to 8001
+    # Railway provides PORT env var, fallback to 8000
+    port = int(os.getenv("PORT", os.getenv("API_PORT", 8000)))
     
     logger.info(f"🚀 Starting API server on {host}:{port}")
     uvicorn.run(app, host=host, port=port)
