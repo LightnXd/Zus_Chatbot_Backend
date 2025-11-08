@@ -44,8 +44,8 @@ CMD set -e; \
     OLLAMA_PID=$!; \
     sleep 10; \
     echo "Pulling embedding model (nomic-embed-text - 274MB)..."; \
-    ollama pull nomic-embed-text || (cat /tmp/ollama.log && exit 1); \
+    ollama pull nomic-embed-text 2>&1 || (echo "❌ Model pull failed!" && cat /tmp/ollama.log && exit 1); \
     echo "Running backend setup..."; \
-    python setup_backend.py || (cat /tmp/ollama.log && exit 1); \
+    python -u setup_backend.py 2>&1 || (echo "❌ Setup failed! Check logs above" && exit 1); \
     echo "Starting API server..."; \
-    exec python api_server_chroma.py
+    exec python -u api_server_chroma.py
