@@ -37,7 +37,7 @@ COPY data/ ./data/
 EXPOSE 8000
 
 # Runtime setup: Pull smaller model and initialize
-# This keeps the image size smaller (model not included in image)
+# Skip setup_backend.py for now - will run manually after deployment
 CMD set -e; \
     echo "Starting Ollama service..."; \
     ollama serve > /tmp/ollama.log 2>&1 & \
@@ -45,7 +45,6 @@ CMD set -e; \
     sleep 10; \
     echo "Pulling embedding model (nomic-embed-text - 274MB)..."; \
     ollama pull nomic-embed-text 2>&1 || (echo "❌ Model pull failed!" && cat /tmp/ollama.log && exit 1); \
-    echo "Running backend setup..."; \
-    python -u setup_backend.py 2>&1 || (echo "❌ Setup failed! Check logs above" && exit 1); \
+    echo "⚠️  Skipping backend setup (will run manually)"; \
     echo "Starting API server..."; \
     exec python -u api_server_chroma.py
