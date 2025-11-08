@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+venv311/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation (not needed in image)
+*.md
+!README.md
+docs/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Chroma DB (will be generated)
+chroma_db/
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Railway/Vercel configs (not needed in image)
+railway.json
+vercel.json
+
+# Development files
+tests/
+test_*.py
+*_test.py
+examples/
+.editorconfig
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
