@@ -88,7 +88,8 @@ class AgenticPlanner:
             'product', 'item', 'capacity', 'size', 'design', 'color', 'material',
             'recommend', 'suggest', 'best', 'water', 'coffee', 'drink', 'hot', 'cold',
             'all day', 'frozee', 'buddy', 'zus', 'merchandise', 'gift', 'set',
-            'list', 'show', 'display', 'top', 'popular', 'available'
+            'list', 'show', 'display', 'top', 'popular', 'available',
+            'cheap', 'cheapest', 'affordable', 'budget', 'expensive', 'inexpensive'
         }
         
         self.outlet_keywords = {
@@ -281,10 +282,8 @@ class AgenticPlanner:
                 if not entities['product_mentions'] and not entities['capacity_mentions']:
                     missing.append(InformationGap.MISSING_PRODUCT_TYPE)
         
-        # Check for missing price range
-        if 'cheap' in question or 'affordable' in question or 'budget' in question:
-            if not entities['price_range']:
-                missing.append(InformationGap.MISSING_PRICE_RANGE)
+        # Note: Removed MISSING_PRICE_RANGE check - price filtering can be done during product search
+        # The LLM can sort by price without needing explicit price range clarification
         
         # Check for missing capacity
         if 'large' in question or 'big' in question or 'small' in question:

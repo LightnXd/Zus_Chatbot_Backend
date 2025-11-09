@@ -25,18 +25,67 @@ def format_product(doc) -> str:
     return " | ".join(parts)
 
 def retrieve_products(question: str, retriever) -> tuple[str, int]:
-    """Retrieve products using vector search"""
+    """Retrieve products using vector search and return pre-formatted response"""
     if not retriever:
         return "Not requested", 0
     
     try:
         raw_products = retriever.invoke(question)
         if isinstance(raw_products, list):
-            drinkware = "\n".join([format_product(d) for d in raw_products])
             products_found = len(raw_products)
+            
+            # Pre-format like outlet service for faster LLM processing
+            if products_found > 0:
+                # Parse products into structured data
+                products_data = []
+                for d in raw_products:
+                    text = getattr(d, "page_content", str(d))
+                    meta = getattr(d, "metadata", {}) or {}
+                    
+                    price = meta.get("price") if isinstance(meta, dict) else None
+                    capacity = meta.get("capacity") if isinstance(meta, dict) else None
+                    
+                    # Convert price to float for sorting
+                    try:
+                        price_float = float(price) if price and price != "None" else 9999999
+                    except:
+                        price_float = 9999999
+                    
+                    products_data.append({
+                        'name': text,
+                        'price': price,
+                        'price_float': price_float,
+                        'capacity': capacity
+                    })
+                
+                # Sort by price if query mentions price-related keywords
+                question_lower = question.lower()
+                if any(kw in question_lower for kw in ['cheap', 'affordable', 'budget', 'expensive', 'price']):
+                    products_data.sort(key=lambda x: x['price_float'])
+                
+                # Format products
+                product_list = []
+                for i, p in enumerate(products_data, 1):
+                    parts = [f"{i}. **{p['name']}**"]
+                    if p['price'] and p['price'] != "None":
+                        parts.append(f"Price: RM{p['price']}")
+                    if p['capacity'] and p['capacity'] != "None":
+                        parts.append(f"Capacity: {p['capacity']}")
+                    product_list.append(" | ".join(parts))
+                
+                # Add context hint for cheapest queries
+                intro = f"We have {products_found} drinkware products available"
+                if 'cheap' in question_lower or 'affordable' in question_lower:
+                    intro += " (sorted by price, cheapest first)"
+                intro += ":\n\n"
+                
+                drinkware = intro + "\n".join(product_list)
+            else:
+                drinkware = "No products found matching your query."
         else:
-            drinkware = format_product(raw_products)
+            drinkware = f"1. {format_product(raw_products)}"
             products_found = 1
+            
         logger.info(f"✅ Products retrieved: {products_found}")
         return drinkware, products_found
     except Exception as e:

@@ -111,6 +111,7 @@ IMPORTANT INSTRUCTIONS:
 - When outlet information includes "Found X outlets total" with a sample list, relay this information EXACTLY as provided
 - When listing outlets or products, include ALL items provided, do not skip any
 - Use bullet points or numbered lists for multiple items
+- For price-based queries (cheap, cheapest, budget, affordable), SORT products by price and recommend the LOWEST priced option first
 - Be conversational and engaging - ask relevant follow-up questions to help users narrow down their search
 - For outlet count queries, offer to help find specific locations by city, area, or mall name
 - For product queries, suggest complementary items or ask about specific needs (capacity, price range, etc.)
