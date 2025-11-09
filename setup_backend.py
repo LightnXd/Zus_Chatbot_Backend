@@ -52,14 +52,19 @@ print("Step 1: Building Chroma Vector Database...")
 print("-" * 60)
 
 try:
-    from langchain_ollama import OllamaEmbeddings
     from langchain_chroma import Chroma
     from langchain_core.documents import Document
+    from langchain_huggingface import HuggingFaceEmbeddings
     import json
+    import os
     
-    # Initialize embeddings
-    print("Connecting to Ollama (nomic-embed-text)...")
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
+    # Use HuggingFace embeddings (works everywhere, no Ollama needed)
+    print("🚀 Using HuggingFace embeddings (sentence-transformers/all-MiniLM-L6-v2)...")
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={'device': 'cpu'},
+        encode_kwargs={'normalize_embeddings': True}
+    )
     
     # Create vector store
     db_location = "./chroma_db"
@@ -195,7 +200,8 @@ print("  SETUP COMPLETE")
 print("=" * 60)
 print()
 print("Next steps:")
-print("1. Start Ollama: ollama serve")
-print("2. Start backend: python start.py")
-print("3. Test: curl http://localhost:8000/health")
+print("1. Start backend: python start.py")
+print("2. Test: curl http://localhost:8000/health")
+print()
+print("Note: Using HuggingFace embeddings (no Ollama needed)")
 print()

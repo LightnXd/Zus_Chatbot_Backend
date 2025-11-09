@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from langchain_ollama.embeddings import OllamaEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
 # Load environment variables from .env.backend
@@ -41,9 +41,15 @@ def initialize_groq_llm():
         return None
 
 def initialize_chroma_vectorstore():
-    """Initialize Chroma Vector Store (LOCAL)"""
+    """Initialize Chroma Vector Store with HuggingFace embeddings"""
     try:
-        embeddings = OllamaEmbeddings(model="nomic-embed-text")
+        # Use HuggingFace embeddings (fast, works everywhere)
+        logger.info("🚀 Using HuggingFace embeddings (sentence-transformers/all-MiniLM-L6-v2)")
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
         
         # Load local Chroma database
         vectorstore = Chroma(
