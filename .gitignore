@@ -13,8 +13,6 @@ env/
 .env
 .env.local
 .md
-# Chroma
-chroma_db/
 
 # Node
 node_modules/
