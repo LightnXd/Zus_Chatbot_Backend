@@ -227,9 +227,12 @@ class AgenticPlanner:
         # Use conversation context metadata if available
         if context:
             metadata = context.get('metadata', {})
-            if metadata.get('mentioned_products'):
-                entities['product_mentions'].extend(metadata['mentioned_products'])
-            if metadata.get('mentioned_cities'):
+            # mentioned_products is a boolean, not a list - just check if true
+            if metadata.get('mentioned_products') and isinstance(metadata.get('mentioned_products'), bool):
+                # Don't extend, just note that products were mentioned
+                pass
+            # mentioned_cities is actually a list, so we can extend
+            if metadata.get('mentioned_cities') and isinstance(metadata.get('mentioned_cities'), list):
                 entities['location_mentions'].extend(metadata['mentioned_cities'])
         
         return entities
