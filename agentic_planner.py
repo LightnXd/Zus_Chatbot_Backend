@@ -313,6 +313,10 @@ class AgenticPlanner:
         # Check if it's a slash command /calculate
         is_calculate_command = question.strip().startswith('/calculate')
         
+        # Product/outlet intent should override calculation if present
+        has_clear_product_intent = len(entities['product_keywords']) >= 2 or 'list' in question or 'show' in question
+        has_clear_outlet_intent = len(entities['outlet_keywords']) >= 2
+        
         calc_score = 0.0
         if has_math_expression:
             calc_score = 0.9  # Very high confidence for clear expressions
@@ -323,10 +327,10 @@ class AgenticPlanner:
             else:
                 # /calculate but no expression - lower confidence, need clarification
                 calc_score = 0.7
-        elif has_calculation_keyword and has_numbers and has_math_operators:
-            # Only trigger if has BOTH numbers AND operators (avoid false positives like "top 3")
+        elif has_calculation_keyword and has_numbers and has_math_operators and not has_clear_product_intent:
+            # Only trigger if has BOTH numbers AND operators AND no clear product intent
             calc_score = 0.7
-        elif has_math_operators and has_numbers:
+        elif has_math_operators and has_numbers and not has_clear_product_intent:
             calc_score = 0.6
         scores['calculation'] = calc_score
         
