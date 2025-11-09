@@ -26,11 +26,19 @@ def format_product(doc) -> str:
 
 def retrieve_products(question: str, retriever) -> tuple[str, int]:
     """Retrieve products using vector search and return pre-formatted response"""
+    import time
     if not retriever:
         return "Not requested", 0
     
     try:
+        logger.info(f"🔍 Starting product search for: {question}")
+        start_time = time.time()
+        
         raw_products = retriever.invoke(question)
+        
+        search_time = time.time() - start_time
+        logger.info(f"⏱️ Vector search completed in {search_time:.2f}s")
+        
         if isinstance(raw_products, list):
             products_found = len(raw_products)
             
