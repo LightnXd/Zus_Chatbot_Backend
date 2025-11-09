@@ -14,14 +14,7 @@ WORKDIR /app
 
 # Copy and install Python dependencies
 COPY requirements-backend.txt .
-RUN pip install --no-cache-dir -r requirements-backend.txt && \
-    pip install --no-cache-dir \
-        langchain \
-        langchain-groq \
-        langchain-chroma \
-        langchain-huggingface \
-        chromadb \
-        supabase
+RUN pip install --no-cache-dir -r requirements-backend.txt
 
 # Copy application code and data
 COPY start.py .
