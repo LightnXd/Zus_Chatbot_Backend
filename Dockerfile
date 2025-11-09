@@ -39,6 +39,7 @@ COPY services/ ./services/
 COPY routes/ ./routes/
 COPY database/ ./database/
 COPY data/ ./data/
+# Copy pre-built ChromaDB with 35 embedded products (3.5MB)
 COPY chroma_db/ ./chroma_db/
 COPY conversation_memory.py .
 COPY agentic_planner.py .
