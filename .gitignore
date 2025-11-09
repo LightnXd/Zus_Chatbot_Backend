@@ -12,7 +12,7 @@ ENV/
 env/
 .env
 .env.local
-
+.md
 # Chroma
 chroma_db/
 

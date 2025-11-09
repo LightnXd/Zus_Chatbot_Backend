@@ -15,6 +15,5 @@ Usage:
 
 from .supabase_schema import get_supabase_client, setup_database
 from .outlet_queries import OutletQueries
-from ...scraping.load_outlets import OutletsLoader
 
-__all__ = ['get_supabase_client', 'setup_database', 'OutletQueries', 'OutletsLoader']
+__all__ = ['get_supabase_client', 'setup_database', 'OutletQueries']

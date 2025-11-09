@@ -87,6 +87,9 @@ try:
                 capacity = str(product.get("capacity", "") or "")
                 price = str(product.get("price_min", ""))
                 
+                # Generate a unique ID for this document
+                doc_id = str(product.get("id", f"doc_{index}"))
+                
                 document = Document(
                     page_content=" ".join([name, description, capacity, price]).strip(),
                     metadata={
@@ -97,20 +100,25 @@ try:
                         "vendor": product.get("vendor", ""),
                         "product_type": product.get("product_type", ""),
                         "created_at": product.get("created_at", ""),
-                    },
-                    id=str(product.get("id", index))
+                    }
                 )
                 
                 documents.append(document)
-                ids.append(str(product.get("id", index)))
+                ids.append(doc_id)
             except json.JSONDecodeError as e:
                 print(f"⚠️  Error parsing line {index + 1}: {e}")
                 continue
     
     if documents:
         print(f"Adding {len(documents)} products to Chroma...")
-        vector_store.add_documents(documents=documents, ids=ids)
-        print(f"✅ Chroma DB created with {len(documents)} products")
+        try:
+            vector_store.add_documents(documents=documents, ids=ids)
+            print(f"✅ Chroma DB created with {len(documents)} products")
+        except Exception as e:
+            print(f"❌ Error adding documents: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
     else:
         print("⚠️  No documents to add")
     

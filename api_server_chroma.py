@@ -75,6 +75,13 @@ except Exception as e:
 
 # Initialize Supabase
 try:
+    import sys
+    from pathlib import Path
+    # Add current directory to path if not already there
+    current_dir = Path(__file__).parent
+    if str(current_dir) not in sys.path:
+        sys.path.insert(0, str(current_dir))
+    
     from database.outlet_queries import OutletQueries
     outlet_queries = OutletQueries()
     logger.info("✅ Supabase outlet queries initialized")
