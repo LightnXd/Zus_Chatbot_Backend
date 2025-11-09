@@ -55,18 +55,7 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
         planner = get_planner()
         plan = planner.plan(question, conversation_context={'metadata': context_metadata})
         
-        # Log planning decisions
-        logger.info("=" * 80)
-        logger.info("🎯 PLANNING DECISIONS:")
-        for i, decision in enumerate(plan.decisions):
-            logger.info(f"  Decision {i+1}: {decision.action.value}")
-            logger.info(f"    Confidence: {decision.confidence:.2f}")
-            logger.info(f"    Reasoning: {decision.reasoning}")
-            if decision.missing_info:
-                logger.info(f"    Missing info: {[gap.value for gap in decision.missing_info]}")
-        logger.info(f"🚀 Primary action: {plan.primary_action.value}")
-        logger.info(f"📋 Execution plan: {plan.execution_plan}")
-        logger.info("=" * 80)
+        # Planning decisions logging removed - now returned in planning_info for frontend display
         
         # Use planner decisions for routing
         search_products = plan.primary_action in [ActionType.SEARCH_PRODUCTS, ActionType.HYBRID_SEARCH]

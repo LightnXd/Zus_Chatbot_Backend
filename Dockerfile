@@ -1,6 +1,9 @@
 # Optimized Dockerfile - Reduced from 2.3GB to 1.1GB
 FROM python:3.11-slim
 
+# Disable ChromaDB telemetry
+ENV CHROMA_TELEMETRY_ENABLED=0
+
 # Install minimal system dependencies
 RUN apt-get update && apt-get install -y \
     curl \

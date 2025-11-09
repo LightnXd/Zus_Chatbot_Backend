@@ -2,6 +2,10 @@
 Application configuration and initialization
 """
 import os
+
+# Disable ChromaDB telemetry (anonymous usage analytics)
+os.environ["CHROMA_TELEMETRY_ENABLED"] = "0"
+
 import logging
 from pathlib import Path
 from dotenv import load_dotenv

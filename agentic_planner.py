@@ -28,6 +28,7 @@ class InformationGap(Enum):
     MISSING_PRODUCT_TYPE = "missing_product_type"
     MISSING_PRICE_RANGE = "missing_price_range"
     MISSING_CAPACITY = "missing_capacity"
+    MISSING_CALCULATION_EXPRESSION = "missing_calculation_expression"
     AMBIGUOUS_INTENT = "ambiguous_intent"
     INCOMPLETE_CONTEXT = "incomplete_context"
 
@@ -86,7 +87,8 @@ class AgenticPlanner:
             'tumbler', 'cup', 'drinkware', 'bottle', 'price', 'cost',
             'product', 'item', 'capacity', 'size', 'design', 'color', 'material',
             'recommend', 'suggest', 'best', 'water', 'coffee', 'drink', 'hot', 'cold',
-            'all day', 'frozee', 'buddy', 'zus', 'merchandise', 'gift', 'set'
+            'all day', 'frozee', 'buddy', 'zus', 'merchandise', 'gift', 'set',
+            'list', 'show', 'display', 'top', 'popular', 'available'
         }
         
         self.outlet_keywords = {
@@ -241,6 +243,15 @@ class AgenticPlanner:
         """Detect what information is missing for complete execution"""
         missing = []
         
+        # Check for /calculate command without expression
+        import re
+        is_calculate_command = question.strip().startswith('/calculate')
+        has_math_expression = bool(re.search(r'\d+\s*[\+\-\*\/\%]\s*\d+', question))
+        
+        if is_calculate_command and not has_math_expression:
+            # /calculate was called but no expression provided
+            missing.append(InformationGap.MISSING_CALCULATION_EXPRESSION)
+        
         # Check if intent is ambiguous
         has_product_keywords = len(entities['product_keywords']) > 0
         has_outlet_keywords = len(entities['outlet_keywords']) > 0
@@ -296,10 +307,21 @@ class AgenticPlanner:
         has_numbers = bool(re.search(r'\d+', question))
         has_math_expression = bool(re.search(r'\d+\s*[\+\-\*\/\%]\s*\d+', question))
         
+        # Check if it's a slash command /calculate
+        is_calculate_command = question.strip().startswith('/calculate')
+        
         calc_score = 0.0
         if has_math_expression:
             calc_score = 0.9  # Very high confidence for clear expressions
-        elif has_calculation_keyword and has_numbers:
+        elif is_calculate_command:
+            # /calculate command without expression - still mark as calculation
+            if has_math_expression or (has_math_operators and has_numbers):
+                calc_score = 0.9
+            else:
+                # /calculate but no expression - lower confidence, need clarification
+                calc_score = 0.7
+        elif has_calculation_keyword and has_numbers and has_math_operators:
+            # Only trigger if has BOTH numbers AND operators (avoid false positives like "top 3")
             calc_score = 0.7
         elif has_math_operators and has_numbers:
             calc_score = 0.6
@@ -465,6 +487,10 @@ class AgenticPlanner:
         if primary_decision.action == ActionType.CONVERSATIONAL:
             return False
         
+        # Always ask for clarification if calculation expression is missing
+        if InformationGap.MISSING_CALCULATION_EXPRESSION in missing_info:
+            return True
+        
         # Ask if we have critical missing information
         critical_gaps = [
             InformationGap.AMBIGUOUS_INTENT,
@@ -490,7 +516,12 @@ class AgenticPlanner:
         questions = []
         
         for gap in missing_info:
-            if gap == InformationGap.MISSING_LOCATION:
+            if gap == InformationGap.MISSING_CALCULATION_EXPRESSION:
+                questions.append(
+                    "What would you like me to calculate? Please provide a mathematical expression (e.g., 5 + 3, 10 * 8)."
+                )
+            
+            elif gap == InformationGap.MISSING_LOCATION:
                 questions.append(
                     "Which area are you looking for? For example: Shah Alam, Petaling Jaya, Subang, or Kuala Lumpur?"
                 )
