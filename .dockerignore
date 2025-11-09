@@ -43,7 +43,6 @@ htmlcov/
 
 # Documentation (not needed in image)
 *.md
-!README.md
 docs/
 
 # Git

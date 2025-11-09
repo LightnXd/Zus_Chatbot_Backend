@@ -29,10 +29,16 @@ RUN pip install --no-cache-dir -r requirements-backend.txt && \
         supabase
 
 # Copy application code and data
-COPY api_server_chroma.py .
+COPY start.py .
 COPY setup_backend.py .
+COPY config/ ./config/
+COPY services/ ./services/
+COPY routes/ ./routes/
 COPY database/ ./database/
 COPY data/ ./data/
+COPY conversation_memory.py .
+COPY agentic_planner.py .
+COPY calculator_tool.py .
 
 EXPOSE 8000
 
@@ -47,4 +53,4 @@ CMD set -e; \
     ollama pull nomic-embed-text 2>&1 || (echo "❌ Model pull failed!" && cat /tmp/ollama.log && exit 1); \
     echo "⚠️  Skipping backend setup (will run manually)"; \
     echo "Starting API server..."; \
-    exec python -u api_server_chroma.py
+    exec python -u start.py
