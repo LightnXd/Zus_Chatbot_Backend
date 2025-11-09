@@ -54,7 +54,7 @@ CMD set -e; \
     sleep 10; \
     echo "Pulling embedding model (nomic-embed-text - 274MB)..."; \
     ollama pull nomic-embed-text 2>&1 || (echo "❌ Model pull failed!" && cat /tmp/ollama.log && exit 1); \
-    echo "✅ Running backend setup to populate ChromaDB..."; \
-    python setup_backend.py || echo "⚠️ Setup had errors but continuing..."; \
+    echo "⚠️ Skipping ChromaDB setup to avoid deployment timeout"; \
+    echo "Note: ChromaDB will be empty - products will return 0 results until manually populated"; \
     echo "Starting API server..."; \
     exec python -u start.py
