@@ -59,17 +59,46 @@ def retrieve_products(question: str, retriever) -> tuple[str, int]:
                     except:
                         price_float = 9999999
                     
+                    # Convert capacity to int for sorting (extract number)
+                    try:
+                        import re
+                        capacity_match = re.search(r'(\d+)', capacity) if capacity else None
+                        capacity_int = int(capacity_match.group(1)) if capacity_match else 0
+                    except:
+                        capacity_int = 0
+                    
                     products_data.append({
                         'name': text,
                         'price': price,
                         'price_float': price_float,
-                        'capacity': capacity
+                        'capacity': capacity,
+                        'capacity_int': capacity_int
                     })
                 
-                # Sort by price if query mentions price-related keywords
+                # Smart sorting based on query intent
                 question_lower = question.lower()
-                if any(kw in question_lower for kw in ['cheap', 'affordable', 'budget', 'expensive', 'price']):
+                sort_note = ""
+                
+                # Price sorting
+                if any(kw in question_lower for kw in ['cheap', 'affordable', 'budget', 'inexpensive']):
+                    products_data.sort(key=lambda x: x['price_float'])  # Cheapest first
+                    sort_note = " (sorted by price, cheapest first)"
+                elif any(kw in question_lower for kw in ['expensive', 'pricey', 'premium', 'most expensive', 'priciest']):
+                    products_data.sort(key=lambda x: x['price_float'], reverse=True)  # Most expensive first
+                    sort_note = " (sorted by price, most expensive first)"
+                
+                # Capacity sorting
+                elif any(kw in question_lower for kw in ['large', 'largest', 'biggest', 'big capacity', 'most capacity']):
+                    products_data.sort(key=lambda x: x['capacity_int'], reverse=True)  # Largest first
+                    sort_note = " (sorted by capacity, largest first)"
+                elif any(kw in question_lower for kw in ['small', 'smallest', 'compact', 'mini', 'least capacity']):
+                    products_data.sort(key=lambda x: x['capacity_int'])  # Smallest first
+                    sort_note = " (sorted by capacity, smallest first)"
+                
+                # Generic price mention (default to cheapest)
+                elif 'price' in question_lower:
                     products_data.sort(key=lambda x: x['price_float'])
+                    sort_note = " (sorted by price, cheapest first)"
                 
                 # Format products
                 product_list = []
@@ -81,11 +110,8 @@ def retrieve_products(question: str, retriever) -> tuple[str, int]:
                         parts.append(f"Capacity: {p['capacity']}")
                     product_list.append(" | ".join(parts))
                 
-                # Add context hint for cheapest queries
-                intro = f"We have {products_found} drinkware products available"
-                if 'cheap' in question_lower or 'affordable' in question_lower:
-                    intro += " (sorted by price, cheapest first)"
-                intro += ":\n\n"
+                # Build intro with appropriate sort note
+                intro = f"We have {products_found} drinkware products available{sort_note}:\n\n"
                 
                 drinkware = intro + "\n".join(product_list)
             else:
