@@ -42,8 +42,8 @@ RUN for i in 1 2 3; do \
 WORKDIR /app
 
 # Install Python packages
-COPY requirements-minimal.txt .
-RUN pip install --no-cache-dir -r requirements-minimal.txt && \
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir -r requirements-backend.txt && \
     pip install --no-cache-dir langchain langchain-groq langchain-chroma langchain-ollama chromadb supabase
 
 # Copy app files
@@ -109,8 +109,8 @@ WORKDIR /app
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Install Python deps
-COPY requirements-minimal.txt .
-RUN pip install --no-cache-dir --target=/app/deps -r requirements-minimal.txt && \
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir --target=/app/deps -r requirements-backend.txt && \
     pip install --no-cache-dir --target=/app/deps \
     langchain langchain-groq langchain-chroma langchain-ollama chromadb supabase
 
@@ -225,8 +225,8 @@ RUN for i in 1 2 3; do \
 WORKDIR /app
 
 # Install Python packages (smaller set)
-COPY requirements-minimal.txt .
-RUN pip install --no-cache-dir -r requirements-minimal.txt && \
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir -r requirements-backend.txt && \
     pip install --no-cache-dir \
     langchain langchain-groq langchain-chroma langchain-ollama chromadb supabase
 

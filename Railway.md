@@ -225,8 +225,8 @@ RUN set -e; \
 WORKDIR /app
 
 # Copy requirements and install dependencies
-COPY requirements-minimal.txt .
-RUN pip install --no-cache-dir -r requirements-minimal.txt && \
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir -r requirements-backend.txt && \
     pip install --no-cache-dir langchain langchain-groq langchain-chroma langchain-ollama chromadb supabase
 
 # Copy application code

@@ -11,7 +11,7 @@
   - [ ] `Dockerfile`
   - [ ] `railway.json`
   - [ ] `requirements-backend.txt`
-  - [ ] `requirements-minimal.txt`
+  - [ ] `requirements-backend.txt`
   - [ ] `api_server_chroma.py`
   - [ ] `setup_backend.py`
   - [ ] `database/` folder

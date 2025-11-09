@@ -41,8 +41,8 @@ RUN for i in 1 2 3 4 5; do \
 
 WORKDIR /app
 
-COPY requirements-minimal.txt .
-RUN pip install --no-cache-dir -r requirements-minimal.txt && \
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir -r requirements-backend.txt && \
     pip install --no-cache-dir langchain langchain-groq langchain-chroma langchain-ollama chromadb supabase
 
 COPY . .

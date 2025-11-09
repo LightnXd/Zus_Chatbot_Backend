@@ -18,8 +18,8 @@ RUN set -e; \
 WORKDIR /app
 
 # Copy and install Python dependencies
-COPY requirements-minimal.txt .
-RUN pip install --no-cache-dir -r requirements-minimal.txt && \
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir -r requirements-backend.txt && \
     pip install --no-cache-dir \
         langchain \
         langchain-groq \
