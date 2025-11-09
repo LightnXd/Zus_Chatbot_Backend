@@ -54,9 +54,6 @@ docs/
 .github/
 .gitlab-ci.yml
 
-# Chroma DB (will be generated)
-chroma_db/
-
 # Temporary files
 *.tmp
 temp/

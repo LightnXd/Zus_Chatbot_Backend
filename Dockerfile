@@ -39,6 +39,7 @@ COPY services/ ./services/
 COPY routes/ ./routes/
 COPY database/ ./database/
 COPY data/ ./data/
+COPY chroma_db/ ./chroma_db/
 COPY conversation_memory.py .
 COPY agentic_planner.py .
 COPY calculator_tool.py .
@@ -54,7 +55,6 @@ CMD set -e; \
     sleep 10; \
     echo "Pulling embedding model (nomic-embed-text - 274MB)..."; \
     ollama pull nomic-embed-text 2>&1 || (echo "❌ Model pull failed!" && cat /tmp/ollama.log && exit 1); \
-    echo "⚠️ Skipping ChromaDB setup to avoid deployment timeout"; \
-    echo "Note: ChromaDB will be empty - products will return 0 results until manually populated"; \
+    echo "✅ Using pre-built ChromaDB with 35 products"; \
     echo "Starting API server..."; \
     exec python -u start.py
