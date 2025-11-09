@@ -13,5 +13,7 @@ supabase>=2.10.0
 requests==2.31.0
 psycopg[binary]==3.2.12
 sqlalchemy==2.0.44
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
 sentence-transformers==3.3.1
 langchain-text-splitters==0.3.4
