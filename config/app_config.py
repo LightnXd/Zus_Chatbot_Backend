@@ -52,6 +52,35 @@ def initialize_chroma_vectorstore():
             embedding_function=embeddings
         )
         
+        # Check if collection is empty and populate if needed
+        try:
+            collection = vectorstore._collection
+            count = collection.count()
+            logger.info(f"📊 ChromaDB collection has {count} items")
+            
+            if count == 0:
+                logger.warning("⚠️ ChromaDB collection is empty! Running setup to populate...")
+                import subprocess
+                import sys
+                result = subprocess.run(
+                    [sys.executable, "setup_backend.py"],
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+                if result.returncode == 0:
+                    logger.info("✅ ChromaDB populated successfully")
+                    # Reload the collection
+                    vectorstore = Chroma(
+                        collection_name="drinkware_collection",
+                        persist_directory="./chroma_db",
+                        embedding_function=embeddings
+                    )
+                else:
+                    logger.error(f"❌ Setup failed: {result.stderr}")
+        except Exception as setup_error:
+            logger.warning(f"⚠️ Could not check/populate ChromaDB: {setup_error}")
+        
         retriever = vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs={"k": 5}
