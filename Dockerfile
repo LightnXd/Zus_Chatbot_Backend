@@ -41,6 +41,7 @@ COPY database/ ./database/
 COPY data/ ./data/
 # Copy pre-built ChromaDB with 35 embedded products (3.5MB)
 COPY chroma_db ./chroma_db
+RUN ls -la chroma_db/ || echo "❌ chroma_db directory not found in image"
 COPY conversation_memory.py .
 COPY agentic_planner.py .
 COPY calculator_tool.py .
