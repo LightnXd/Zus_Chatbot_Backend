@@ -19,6 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+cors_origins = [origin.strip() for origin in cors_origins]  # Remove any whitespace
 logger.info(f"CORS allowed origins: {cors_origins}")
 
 def initialize_groq_llm():
