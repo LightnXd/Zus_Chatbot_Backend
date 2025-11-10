@@ -17,12 +17,6 @@ async def handle_calculate(expression: str = None, text: str = None):
     try:
         calculator = get_calculator()
         
-        logger.info("=" * 80)
-        logger.info("🧮 /calculate ENDPOINT CALLED")
-        logger.info(f"📝 Expression: {expression}")
-        logger.info(f"📝 Text: {text}")
-        logger.info("=" * 80)
-        
         # Mode 1: Direct expression
         if expression:
             result = calculator.calculate(expression)

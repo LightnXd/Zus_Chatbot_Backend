@@ -42,7 +42,6 @@ app.add_middleware(
 )
 
 # Initialize services
-logger.info("🚀 Initializing services...")
 model = initialize_groq_llm()
 vectorstore, retriever = initialize_chroma_vectorstore()
 outlet_queries, text_to_sql = initialize_supabase()
@@ -92,7 +91,5 @@ if __name__ == "__main__":
     host = os.getenv("API_HOST", "0.0.0.0")
     # Railway provides PORT env var, fallback to 8000
     port = int(os.getenv("PORT", os.getenv("API_PORT", 8000)))
-    
-    logger.info(f"🚀 Starting API server on {host}:{port}")
     uvicorn.run(app, host=host, port=port)
 

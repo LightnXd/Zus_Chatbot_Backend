@@ -59,20 +59,12 @@ async def handle_products_search(query: str, k: int, vectorstore, model):
         if not vectorstore or not model:
             raise HTTPException(status_code=500, detail="Vector search or LLM service not available")
         
-        logger.info("=" * 80)
-        logger.info("🔵 /products ENDPOINT CALLED")
-        logger.info(f"📝 Query: {query}")
-        logger.info(f"🔢 Top-k: {k}")
-        logger.info("=" * 80)
-        
         # Retrieve top-k products
         retriever_temp = vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs={"k": k}
         )
         raw_products = retriever_temp.invoke(query)
-        
-        logger.info(f"📊 Vector Search Results: {len(raw_products)} products retrieved")
         
         if not raw_products:
             return {
@@ -98,8 +90,6 @@ async def handle_products_search(query: str, k: int, vectorstore, model):
         
         # Generate AI summary
         summary = generate_product_summary(query, raw_products, model, k)
-        
-        logger.info("=" * 80)
         
         return {
             "query": query,

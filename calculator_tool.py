@@ -33,7 +33,6 @@ class CalculatorTool:
         Returns:
             bool: True if arithmetic intent detected
         """
-        # Arithmetic keywords
         arithmetic_keywords = [
             'calculate', 'compute', 'add', 'subtract', 'multiply', 'divide',
             'plus', 'minus', 'times', 'divided', 'sum', 'difference', 'product',
@@ -42,20 +41,11 @@ class CalculatorTool:
         
         text_lower = text.lower()
         
-        # Check for keywords
         has_keyword = any(kw in text_lower for kw in arithmetic_keywords)
-        
-        # Check for numbers
         has_numbers = bool(re.search(r'\d+', text))
-        
-        # Check for operators
         has_operators = any(op in text for op in ['+', '-', '*', '/', '=', 'x'])
-        
-        # Detect expressions like "5 + 3" or "what is 10 * 2"
         has_expression = bool(re.search(r'\d+\s*[\+\-\*\/\%]\s*\d+', text))
-        
-        logger.info(f"🧮 Arithmetic detection - keyword: {has_keyword}, numbers: {has_numbers}, operators: {has_operators}, expression: {has_expression}")
-        
+                
         return (has_keyword and has_numbers) or has_operators or has_expression
     
     def extract_expression(self, text: str) -> Optional[str]:
@@ -80,8 +70,6 @@ class CalculatorTool:
                 if re.search(r'\d', match) and re.search(r'[\+\-\*\/\%]', match):
                     return match.strip()
         
-        # Pattern 2: Word-based expressions
-        # "what is 5 plus 3" -> "5 + 3"
         word_to_op = {
             'plus': '+',
             'add': '+',
@@ -101,7 +89,6 @@ class CalculatorTool:
         text_lower = text.lower()
         for word, op in word_to_op.items():
             if word in text_lower:
-                # Try to extract numbers around the word
                 pattern = rf'(\d+\.?\d*)\s*{word}\s*(\d+\.?\d*)'
                 match = re.search(pattern, text_lower)
                 if match:
@@ -118,11 +105,8 @@ class CalculatorTool:
         
         Returns:
             Dict with result, success status, and optional error
-        """
-        logger.info(f"🧮 Calculating expression: {expression}")
-        
+        """        
         try:
-            # Security: Only allow numbers, operators, parentheses, spaces, and decimal points
             if not re.match(r'^[\d\.\s\+\-\*\/\%\(\)]+$', expression):
                 return {
                     "success": False,
@@ -130,19 +114,13 @@ class CalculatorTool:
                     "expression": expression
                 }
             
-            # Evaluate expression
             result = eval(expression)
             
-            # Format result
             if isinstance(result, float):
-                # Round to 6 decimal places to avoid floating point issues
                 if result == int(result):
                     result = int(result)
                 else:
                     result = round(result, 6)
-            
-            logger.info(f"✅ Calculation successful: {expression} = {result}")
-            
             return {
                 "success": True,
                 "expression": expression,
@@ -199,16 +177,14 @@ class CalculatorTool:
             return {
                 "success": False,
                 "error": "Could not extract a valid mathematical expression.",
-                "has_arithmetic_intent": True
-            }
+            "has_arithmetic_intent": True
+        }
         
-        # Calculate
         result = self.calculate(expression)
         result["original_text"] = text
         return result
 
 
-# Global calculator instance
 _calculator = None
 
 

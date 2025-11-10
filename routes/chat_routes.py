@@ -39,30 +39,19 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
         if not question:
             raise HTTPException(status_code=400, detail="Question cannot be empty")
         
-        # Get or create session
         session_id = request.session_id or str(uuid.uuid4())
         memory = get_memory_manager()
         
-        # Get conversation history and context
         conversation_history = memory.get_conversation_context(session_id, n=3)
         context_metadata = memory.get_context_metadata(session_id)
         
-        logger.info(f"📝 Session: {session_id}")
-        logger.info(f"📚 Conversation history: {len(conversation_history)} characters")
-        logger.info(f"🔍 Context metadata: {context_metadata}")
-        
-        # AGENTIC PLANNER - Make explicit decisions with reasoning
         planner = get_planner()
         plan = planner.plan(question, conversation_context={'metadata': context_metadata})
         
-        # Planning decisions logging removed - now returned in planning_info for frontend display
-        
-        # Use planner decisions for routing
         search_products = plan.primary_action in [ActionType.SEARCH_PRODUCTS, ActionType.HYBRID_SEARCH]
         search_outlets = plan.primary_action in [ActionType.SEARCH_OUTLETS, ActionType.HYBRID_SEARCH]
         do_calculation = plan.primary_action == ActionType.CALCULATE
         
-        # Also enable searches if they're secondary actions with good confidence
         for decision in plan.decisions:
             if decision.action == ActionType.SEARCH_PRODUCTS and decision.confidence > 0.4:
                 search_products = True
@@ -70,17 +59,13 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
                 search_outlets = True
             if decision.action == ActionType.CALCULATE and decision.confidence > 0.5:
                 do_calculation = True
-        
-        logger.info(f"Search routing (planner-driven) - Products: {search_products}, Outlets: {search_outlets}, Calculate: {do_calculation}")
-        
-        # Perform calculation if needed
+                
         calculation_result = None
         if do_calculation:
             try:
                 calculator = get_calculator()
                 calc_data = calculator.parse_and_calculate(question)
                 calculation_result = calc_data
-                logger.info(f"🧮 Calculation result: {calc_data}")
             except Exception as e:
                 logger.error(f"Error in calculation: {e}")
                 calculation_result = {
@@ -88,22 +73,17 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
                     "error": f"Calculation failed: {str(e)}"
                 }
         
-        # Retrieve products
         drinkware = "Not requested"
         products_found = 0
         if search_products:
             drinkware, products_found = retrieve_products(question, retriever)
         
-        # Retrieve outlets
         outlet_info = "Not requested"
         outlets_found = 0
         if search_outlets:
             outlet_info = get_outlet_info(question, text_to_sql, outlet_queries)
-            logger.info(f"Outlet info returned: {outlet_info[:200]}...")
             outlets_found = count_outlets_from_response(outlet_info)
-            logger.info(f"✅ Outlets found: {outlets_found}")
         
-        # Add user message to conversation history
         memory.add_user_message(
             session_id,
             question,
@@ -114,18 +94,13 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
             }
         )
         
-        # Create prompt - add clarification questions if needed
         if plan.should_ask_clarification and plan.clarification_questions:
-            logger.info(f"❓ Asking {len(plan.clarification_questions)} clarification questions")
-            
-            # Add clarification context to the system
             clarification_context = "\n\nCLARIFICATION NEEDED:\n" + "\n".join([
                 f"- {q}" for q in plan.clarification_questions
             ])
             
             prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + clarification_context)
         else:
-            # Add calculation result to system template if available
             if calculation_result and calculation_result.get("success"):
                 calc_context = f"\n\nCALCULATION RESULT:\n{calculation_result.get('formatted', '')}\n\nIMPORTANT: Keep your response BRIEF (1-2 sentences). Simply state the answer and ask if they have any other questions or need help with products/outlets."
                 prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + calc_context)
@@ -137,7 +112,6 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
         
         chain = prompt | model
         
-        # Generate response
         result = chain.invoke({
             "conversation_history": conversation_history,
             "drinkware": drinkware or "No products found",
@@ -145,17 +119,13 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
             "question": question,
         })
         
-        # Extract response content
         response_text = result.content if hasattr(result, 'content') else str(result)
         
-        # If clarification was needed, append follow-up questions
         if plan.should_ask_clarification and plan.clarification_questions:
-            # Only add if LLM didn't already ask similar questions
-            if "?" not in response_text[-100:]:  # Check last 100 chars
+            if "?" not in response_text[-100:]:
                 response_text += "\n\n" + "\n".join(plan.clarification_questions)
         
-        # Add assistant response to conversation history
-        memory.add_assistant_message(
+        memory.add_agent_message(
             session_id,
             response_text,
             metadata={
@@ -165,7 +135,6 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
             }
         )
         
-        # Build planning info for response
         planning_info = {
             "primary_action": plan.primary_action.value,
             "secondary_actions": [a.value for a in plan.secondary_actions],

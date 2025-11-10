@@ -3,7 +3,6 @@ Application configuration and initialization
 """
 import os
 
-# Disable ChromaDB telemetry (anonymous usage analytics)
 os.environ["CHROMA_TELEMETRY_ENABLED"] = "0"
 
 import logging
@@ -13,15 +12,12 @@ from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
-# Load environment variables from .env.backend
 env_path = Path(__file__).parent.parent / ".env.backend"
 load_dotenv(dotenv_path=env_path, override=True)
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# CORS configuration
 cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 logger.info(f"CORS allowed origins: {cors_origins}")
 
@@ -34,7 +30,7 @@ def initialize_groq_llm():
             temperature=0.7,
             max_retries=2
         )
-        logger.info("✅ Groq LLM initialized (Llama 3.3 70B)")
+        logger.info("Groq LLM initialized (Llama 3.3 70B)")
         return model
     except Exception as e:
         logger.error(f"❌ Failed to initialize Groq: {e}")
@@ -43,58 +39,52 @@ def initialize_groq_llm():
 def initialize_chroma_vectorstore():
     """Initialize Chroma Vector Store with HuggingFace embeddings"""
     try:
-        # Use HuggingFace embeddings (fast, works everywhere)
-        logger.info("🚀 Using HuggingFace embeddings (sentence-transformers/all-MiniLM-L6-v2)")
+        logger.info("Using HuggingFace embeddings (sentence-transformers/all-MiniLM-L6-v2)")
         embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/all-MiniLM-L6-v2",
             model_kwargs={'device': 'cpu'},
             encode_kwargs={'normalize_embeddings': True}
         )
         
-        # Load local Chroma database
         vectorstore = Chroma(
             collection_name="drinkware_collection",
             persist_directory="./chroma_db",
             embedding_function=embeddings
         )
         
-        # Check if collection is empty and populate if needed
-        try:
-            collection = vectorstore._collection
-            count = collection.count()
-            logger.info(f"📊 ChromaDB collection has {count} items")
-            
-            if count == 0:
-                logger.warning("⚠️ ChromaDB collection is empty! Running setup to populate...")
-                import subprocess
-                import sys
-                result = subprocess.run(
-                    [sys.executable, "setup_backend.py"],
-                    capture_output=True,
-                    text=True,
-                    timeout=120
+        collection_size = vectorstore._collection.count()
+        collection = vectorstore._collection
+        count = collection.count()
+        logger.info(f"ChromaDB collection has {count} items")
+        
+        if count == 0:
+            logger.warning("⚠️ ChromaDB collection is empty! Running setup to populate...")
+            import subprocess
+            import sys
+            result = subprocess.run(
+                [sys.executable, "setup_backend.py"],
+                capture_output=True,
+                text=True,
+                timeout=120
+            )
+            if result.returncode == 0:
+                logger.info("ChromaDB populated successfully")
+                vectorstore = Chroma(
+                    collection_name="drinkware_collection",
+                    persist_directory="./chroma_db",
+                    embedding_function=embeddings
                 )
-                if result.returncode == 0:
-                    logger.info("✅ ChromaDB populated successfully")
-                    # Reload the collection
-                    vectorstore = Chroma(
-                        collection_name="drinkware_collection",
-                        persist_directory="./chroma_db",
-                        embedding_function=embeddings
-                    )
-                else:
-                    logger.error(f"❌ Setup failed: {result.stderr}")
-        except Exception as setup_error:
-            logger.warning(f"⚠️ Could not check/populate ChromaDB: {setup_error}")
+            else:
+                logger.error(f"❌ Setup failed: {result.stderr}")
         
         retriever = vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs={"k": 5}
         )
-        logger.info("✅ Chroma vector store initialized (LOCAL)")
+        logger.info("Chroma vector store initialized (LOCAL)")
         return vectorstore, retriever
     except Exception as e:
-        logger.error(f"❌ Failed to initialize Chroma: {e}")
+        logger.error(f"Failed to initialize Chroma: {e}")
         return None, None
 
 def initialize_supabase():
@@ -112,14 +102,14 @@ def initialize_supabase():
         
         outlet_queries = OutletQueries()
         text_to_sql = OutletTextToSQL()
-        logger.info("✅ Supabase outlet queries initialized (with text-to-SQL)")
+        logger.info("Supabase outlet queries initialized (with text-to-SQL)")
         return outlet_queries, text_to_sql
     except Exception as e:
-        logger.error(f"⚠️  Failed to initialize Supabase: {e}")
+        logger.error(f"Failed to initialize Supabase: {e}")
         return None, None
 
 # System prompt template
-SYSTEM_TEMPLATE = """You are a helpful and friendly assistant for ZUS Drinkware - a Malaysian drinkware brand known for tumblers, cups, and reusable products.
+SYSTEM_TEMPLATE = """You are a helpful and friendly agent for ZUS Drinkware - a Malaysian drinkware brand known for tumblers, cups, and reusable products.
 
 You can help users with:
 - Product information (tumblers, cups, straws, lids, sleeves)

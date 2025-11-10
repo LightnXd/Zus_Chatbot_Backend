@@ -38,7 +38,6 @@ class OutletTextToSQL:
         # Get Supabase client for direct query execution
         from .supabase_schema import get_supabase_client
         self.supabase = get_supabase_client()
-        logger.info("✅ Supabase client initialized for text-to-SQL")
         
         # Create a custom prompt for SQL generation
         self.sql_prompt = ChatPromptTemplate.from_messages([
@@ -114,8 +113,6 @@ Return ONLY the SQL query, no explanations."""),
             
             # Clean up the SQL
             sql_query = sql_query.replace("```sql", "").replace("```", "").strip()
-            
-            logger.info(f"Generated SQL: {sql_query}")
             return sql_query
                 
         except Exception as e:
@@ -162,7 +159,6 @@ Return ONLY the SQL query, no explanations."""),
             
             response = query.execute()
             count = response.count if hasattr(response, 'count') else 0
-            logger.info(f"Count query executed: {count} rows")
             return [{"count": count}]
         
         # Regular SELECT queries
@@ -186,7 +182,6 @@ Return ONLY the SQL query, no explanations."""),
         # Execute
         response = query.execute()
         result = response.data if response.data else []
-        logger.info(f"SQL executed successfully, rows returned: {len(result)}")
         return result
     
     def _parse_where_clause(self, query, sql_query: str):
@@ -270,12 +265,6 @@ Return ONLY the SQL query, no explanations."""),
         Returns:
             Dictionary with sql, results, and metadata
         """
-        # 🔵 PRODUCTION LOG: Text-to-SQL called
-        logger.info("=" * 80)
-        logger.info("🔵 TEXT-TO-SQL ACTIVATED")
-        logger.info(f"📝 User Question: {question}")
-        logger.info("=" * 80)
-        
         # Generate SQL
         sql_query = self.generate_sql(question)
         
@@ -288,21 +277,8 @@ Return ONLY the SQL query, no explanations."""),
                 "results": []
             }
         
-        # 🔵 PRODUCTION LOG: Generated SQL
-        logger.info(f"✅ Generated SQL Query:")
-        logger.info(f"   {sql_query}")
-        logger.info("-" * 80)
-        
         # Execute SQL
         results = self.execute_sql(sql_query)
-        
-        # 🔵 PRODUCTION LOG: Execution results
-        logger.info(f"📊 Execution Results:")
-        logger.info(f"   Rows returned: {len(results) if isinstance(results, list) else 0}")
-        if results and isinstance(results, list) and len(results) > 0:
-            logger.info(f"   First result sample: {results[0]}")
-        logger.info("=" * 80)
-        
         return {
             "success": True,
             "sql": sql_query,

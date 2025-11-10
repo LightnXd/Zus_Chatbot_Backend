@@ -57,11 +57,6 @@ async def handle_outlets_search(query: str, text_to_sql, outlet_queries):
         if not text_to_sql:
             raise HTTPException(status_code=500, detail="Text-to-SQL service not available")
         
-        logger.info("=" * 80)
-        logger.info("🔵 /outlets ENDPOINT CALLED")
-        logger.info(f"📝 Query parameter: {query}")
-        logger.info("=" * 80)
-        
         result = text_to_sql.query(query)
         
         if not result["success"]:

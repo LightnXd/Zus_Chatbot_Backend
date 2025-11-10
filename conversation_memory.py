@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Message:
     """Single message in conversation"""
-    role: str  # 'user' or 'assistant'
+    role: str  # 'user' or 'agent'
     content: str
     timestamp: datetime = field(default_factory=datetime.now)
     metadata: Dict = field(default_factory=dict)
@@ -40,8 +40,8 @@ class Conversation:
         self.last_accessed = datetime.now()
     
     def get_recent_messages(self, n: int = 3) -> List[Message]:
-        """Get last N message pairs (user + assistant)"""
-        # Get last N*2 messages (N user + N assistant)
+        """Get last N message pairs (user + agent)"""
+        # Get last N*2 messages (N user + N agent)
         return self.messages[-(n * 2):] if len(self.messages) >= n * 2 else self.messages
     
     def format_for_llm(self, n: int = 3) -> str:
@@ -52,7 +52,7 @@ class Conversation:
         
         formatted = []
         for msg in recent:
-            prefix = "User" if msg.role == "user" else "Assistant"
+            prefix = "User" if msg.role == "user" else "Agent"
             formatted.append(f"{prefix}: {msg.content}")
         
         return "\n".join(formatted)
@@ -100,19 +100,14 @@ class ConversationMemoryManager:
         """
         self.conversations: Dict[str, Conversation] = {}
         self.max_sessions = max_sessions
-        self.session_timeout = timedelta(minutes=session_timeout_minutes)
-        logger.info(f"✅ ConversationMemoryManager initialized (max_sessions={max_sessions}, timeout={session_timeout_minutes}min)")
-    
+        self.session_timeout = timedelta(minutes=session_timeout_minutes)    
     def get_or_create_session(self, session_id: str) -> Conversation:
         """Get existing conversation or create new one"""
         # Cleanup old sessions first
         self._cleanup_expired_sessions()
         
         if session_id not in self.conversations:
-            logger.info(f"📝 Creating new conversation session: {session_id}")
             self.conversations[session_id] = Conversation(session_id=session_id)
-        else:
-            logger.info(f"♻️  Retrieving existing conversation session: {session_id}")
         
         return self.conversations[session_id]
     
@@ -120,13 +115,11 @@ class ConversationMemoryManager:
         """Add user message to conversation"""
         conversation = self.get_or_create_session(session_id)
         conversation.add_message("user", content, metadata)
-        logger.info(f"💬 User message added to session {session_id}")
     
-    def add_assistant_message(self, session_id: str, content: str, metadata: Dict = None):
-        """Add assistant response to conversation"""
+    def add_agent_message(self, session_id: str, content: str, metadata: Dict = None):
+        """Add agent response to conversation"""
         conversation = self.get_or_create_session(session_id)
-        conversation.add_message("assistant", content, metadata)
-        logger.info(f"🤖 Assistant message added to session {session_id}")
+        conversation.add_message("agent", content, metadata)
     
     def get_conversation_context(self, session_id: str, n: int = 3) -> str:
         """Get formatted conversation history for LLM"""
@@ -147,7 +140,6 @@ class ConversationMemoryManager:
         """Clear a specific conversation session"""
         if session_id in self.conversations:
             del self.conversations[session_id]
-            logger.info(f"🗑️  Cleared conversation session: {session_id}")
     
     def _cleanup_expired_sessions(self):
         """Remove expired sessions to free memory"""
@@ -160,9 +152,6 @@ class ConversationMemoryManager:
         for sid in expired:
             del self.conversations[sid]
         
-        if expired:
-            logger.info(f"🧹 Cleaned up {len(expired)} expired sessions")
-        
         # If still too many sessions, remove oldest
         if len(self.conversations) > self.max_sessions:
             sorted_sessions = sorted(
@@ -172,7 +161,6 @@ class ConversationMemoryManager:
             to_remove = len(self.conversations) - self.max_sessions
             for sid, _ in sorted_sessions[:to_remove]:
                 del self.conversations[sid]
-            logger.info(f"🧹 Removed {to_remove} oldest sessions to stay under limit")
     
     def get_stats(self) -> Dict:
         """Get memory manager statistics"""

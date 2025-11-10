@@ -124,37 +124,23 @@ class AgenticPlanner:
         Returns:
             PlannerOutput with actions, decisions, and clarification questions
         """
-        logger.info("=" * 80)
-        logger.info("🧠 AGENTIC PLANNER ACTIVATED")
-        logger.info(f"📝 Question: {question}")
-        logger.info(f"📚 Has context: {conversation_context is not None}")
-        logger.info("=" * 80)
         
         question_lower = question.lower()
         output = PlannerOutput()
         
         # Step 1: Extract entities and detect intent
         entities = self._extract_entities(question_lower, conversation_context)
-        logger.info(f"🔍 Extracted entities: {entities}")
         
         # Step 2: Detect missing information
         missing_info = self._detect_missing_info(question_lower, entities, conversation_context)
-        logger.info(f"⚠️  Missing information: {[gap.value for gap in missing_info]}")
         
         # Step 3: Analyze intent and confidence
         intent_scores = self._analyze_intent(question_lower, entities)
-        logger.info(f"📊 Intent scores: {intent_scores}")
         
         # Step 4: Make decisions with reasoning
         decisions = self._make_decisions(question_lower, entities, intent_scores, missing_info)
         output.decisions = decisions
-        
-        # Log all decisions
-        for i, decision in enumerate(decisions):
-            logger.info(f"🎯 Decision {i+1}: {decision.action.value}")
-            logger.info(f"   Confidence: {decision.confidence:.2f}")
-            logger.info(f"   Reasoning: {decision.reasoning}")
-        
+
         # Step 5: Determine primary action
         primary_decision = max(decisions, key=lambda d: d.confidence)
         output.primary_action = primary_decision.action
@@ -171,13 +157,9 @@ class AgenticPlanner:
             output.clarification_questions = self._generate_clarification_questions(
                 missing_info, entities, primary_decision
             )
-            logger.info(f"❓ Clarification needed: {len(output.clarification_questions)} questions")
-        
+
         # Step 8: Create execution plan
         output.execution_plan = self._create_execution_plan(output)
-        logger.info(f"📋 Execution plan: {output.execution_plan}")
-        logger.info("=" * 80)
-        
         return output
     
     def _extract_entities(self, question: str, context: Dict = None) -> Dict[str, Any]:

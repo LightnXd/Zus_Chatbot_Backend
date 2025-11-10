@@ -8,33 +8,15 @@ logger = logging.getLogger(__name__)
 
 def get_outlet_info(query: str, text_to_sql, outlet_queries) -> str:
     """Retrieve outlet information using text-to-SQL"""
-    # 🔵 PRODUCTION LOG: Outlet query received
-    logger.info("=" * 80)
-    logger.info("🔵 OUTLET QUERY HANDLER CALLED")
-    logger.info(f"📝 Query: {query}")
-    logger.info(f"🔧 text_to_sql available: {text_to_sql is not None}")
-    logger.info("=" * 80)
-    
     if not text_to_sql:
         logger.warning("⚠️  text_to_sql is None, returning default message")
         return "Outlets available across Kuala Lumpur and Selangor regions"
     
     try:
-        # Use text-to-SQL to convert natural language to SQL query
-        logger.info(f"🚀 Invoking text-to-SQL for query: {query}")
         result = text_to_sql.query(query)
-        
-        # 🔵 PRODUCTION LOG: Text-to-SQL result
-        logger.info(f"📊 Text-to-SQL Result:")
-        logger.info(f"   Success: {result['success']}")
-        logger.info(f"   SQL: {result.get('sql', 'N/A')}")
-        logger.info(f"   Result Count: {result.get('count', 0)}")
-        logger.info("-" * 80)
-        
         if result["success"] and result["results"]:
             results = result["results"]
             
-            # Check if it's a count query
             if len(results) == 1 and 'count' in results[0]:
                 count = results[0]['count']
                 sql_lower = result['sql'].lower()
@@ -50,16 +32,11 @@ def get_outlet_info(query: str, text_to_sql, outlet_queries) -> str:
                         return f"There are {count} outlets matching your criteria."
                 return f"There are {count} outlets in total."
             
-            # Check if this is a maps_url request (SQL includes maps_url in SELECT)
             sql_lower = result['sql'].lower()
             is_maps_request = 'maps_url' in sql_lower or 'map' in query.lower() or 'google' in query.lower() or 'location link' in query.lower()
             
-            logger.info(f"🗺️  Maps URL request detected: {is_maps_request}")
-            
-            # If we have many results (>10), show summary with top 5
             if len(results) > 10:
                 if is_maps_request:
-                    # For map requests, include URLs
                     outlet_list = "\n".join([
                         f"• {o.get('name', 'N/A')} - {o.get('address', 'N/A')} ({o.get('city', 'N/A')}, {o.get('state', 'N/A')})\n  📍 Map: {o.get('maps_url', 'Not available')}"
                         for o in results[:5]
@@ -72,7 +49,6 @@ def get_outlet_info(query: str, text_to_sql, outlet_queries) -> str:
                 return (f"Found {len(results)} outlets total. Here are the first 5:\n\n{outlet_list}\n\n"
                        f"For more specific results, please provide additional details like city, area, or mall name.")
             
-            # For smaller result sets, show all with maps_url if requested
             if is_maps_request:
                 outlet_text = "\n".join([
                     f"• {o.get('name', 'N/A')} - {o.get('address', 'N/A')} ({o.get('city', 'N/A')}, {o.get('state', 'N/A')})\n  📍 Map: {o.get('maps_url', 'Not available')}"
@@ -84,10 +60,8 @@ def get_outlet_info(query: str, text_to_sql, outlet_queries) -> str:
                     for o in results
                 ])
             
-            logger.info(f"✅ Formatted outlet response ({len(results)} outlets, maps_url: {is_maps_request})")
             return outlet_text if outlet_text else "No outlets found matching your criteria"
         else:
-            # Fallback to old method if text-to-SQL fails
             logger.warning("⚠️  Text-to-SQL failed, falling back to keyword search")
             return get_outlet_info_fallback(query, outlet_queries)
             
