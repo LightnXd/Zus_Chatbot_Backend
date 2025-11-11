@@ -12,7 +12,6 @@ ENV/
 env/
 .env
 .env.local
-.md
 
 # Node
 node_modules/
