@@ -72,15 +72,24 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
                     "success": False,
                     "error": f"Calculation failed: {str(e)}"
                 }
+        # If calculation succeeded, prioritize returning the calculation result
+        # directly to the user and do NOT ask unrelated clarification questions.
+        calculation_only = False
+        if calculation_result and calculation_result.get("success"):
+            # If the planner decided to calculate (primary action is CALCULATE)
+            # or there are no product/outlet searches requested, treat this as
+            # a calculation-only request and return the result immediately.
+            if plan.primary_action == ActionType.CALCULATE or not (search_products or search_outlets):
+                calculation_only = True
         
         drinkware = "Not requested"
         products_found = 0
-        if search_products:
+        if search_products and not calculation_only:
             drinkware, products_found = retrieve_products(question, retriever)
         
         outlet_info = "Not requested"
         outlets_found = 0
-        if search_outlets:
+        if search_outlets and not calculation_only:
             outlet_info = get_outlet_info(question, text_to_sql, outlet_queries)
             outlets_found = count_outlets_from_response(outlet_info)
         
@@ -94,21 +103,67 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
             }
         )
         
-        if plan.should_ask_clarification and plan.clarification_questions:
-            clarification_context = "\n\nCLARIFICATION NEEDED:\n" + "\n".join([
-                f"- {q}" for q in plan.clarification_questions
-            ])
-            
-            prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + clarification_context)
+        # If this is a calculation-only request and the calculation succeeded,
+        # return the calculation result directly and skip the LLM entirely.
+        if calculation_only and calculation_result and calculation_result.get("success"):
+            # Build a direct response with the result and a polite follow-up
+            response_text = f"{calculation_result.get('formatted', '')}\n\nIs there anything else I can help you with?"
+
+            # Persist agent message to memory
+            memory.add_agent_message(
+                session_id,
+                response_text,
+                metadata={
+                    "products_found": 0,
+                    "outlets_found": 0,
+                    "clarification_asked": False
+                }
+            )
+
+            # Build planning_info for response
+            planning_info = {
+                "primary_action": plan.primary_action.value,
+                "secondary_actions": [a.value for a in plan.secondary_actions],
+                "decision_count": len(plan.decisions),
+                "decisions": plan.get_decision_log(),
+                "execution_plan": plan.execution_plan,
+                "clarification_needed": False,
+                "clarification_questions": [],
+                "calculation_performed": True,
+                "calculation_result": calculation_result
+            }
+
+            return ChatResponse(
+                response=response_text,
+                products_found=0,
+                outlets_found=0,
+                search_info={
+                    "searched_products": False,
+                    "searched_outlets": False,
+                    "mode": plan.primary_action.value,
+                    "has_conversation_history": conversation_history != "No previous conversation.",
+                    "context_metadata": context_metadata
+                },
+                session_id=session_id,
+                planning_info=planning_info
+            )
+
         else:
-            if calculation_result and calculation_result.get("success"):
-                calc_context = f"\n\nCALCULATION RESULT:\n{calculation_result.get('formatted', '')}\n\nIMPORTANT: Keep your response BRIEF (1-2 sentences). Simply state the answer and ask if they have any other questions or need help with products/outlets."
-                prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + calc_context)
-            elif calculation_result and not calculation_result.get("success"):
-                calc_context = f"\n\nCALCULATION ERROR:\n{calculation_result.get('error', 'Unknown error')}\n\nIMPORTANT: Keep your response BRIEF (1-2 sentences). Explain the error simply and ask if they have any other questions or need help with products/outlets."
-                prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + calc_context)
+            # Build prompt normally (may include clarification or calc context)
+            if plan.should_ask_clarification and plan.clarification_questions:
+                clarification_context = "\n\nCLARIFICATION NEEDED:\n" + "\n".join([
+                    f"- {q}" for q in plan.clarification_questions
+                ])
+                prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + clarification_context)
             else:
-                prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE)
+                if calculation_result and calculation_result.get("success"):
+                    calc_context = f"\n\nCALCULATION RESULT:\n{calculation_result.get('formatted', '')}\n\nIMPORTANT: Keep your response BRIEF (1-2 sentences). Simply state the answer and ask if they have any other questions or need help with products/outlets."
+                    prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + calc_context)
+                elif calculation_result and not calculation_result.get("success"):
+                    calc_context = f"\n\nCALCULATION ERROR:\n{calculation_result.get('error', 'Unknown error')}\n\nIMPORTANT: Keep your response BRIEF (1-2 sentences). Explain the error simply and ask if they have any other questions or need help with products/outlets."
+                    prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE + calc_context)
+                else:
+                    prompt = ChatPromptTemplate.from_template(SYSTEM_TEMPLATE)
         
         chain = prompt | model
         

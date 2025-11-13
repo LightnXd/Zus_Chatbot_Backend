@@ -147,6 +147,9 @@ Zus_Chatbot_Backend/
 ├── requirements-backend.txt    # Python dependencies
 ├── Dockerfile                  # Multi-stage Docker build
 ├── railway.json                # Railway deployment config
+├── .env.backend                # Environment variables (local)
+├── .dockerignore               # Docker ignore rules
+├── .gitignore                  # Git ignore rules
 │
 ├── config/
 │   └── app_config.py          # LLM, embeddings, DB initialization
@@ -166,16 +169,25 @@ Zus_Chatbot_Backend/
 ├── database/
 │   ├── text_to_sql.py         # SQL generation from NL
 │   ├── outlet_queries.py      # Supabase query wrapper
-│   └── supabase_schema.py     # Database schema definition
+│   ├── supabase_schema.py     # Database schema definition
+│   ├── docker-compose.yml     # Docker setup for local PostgreSQL
+│   └── SETUP.md               # Database setup instructions
 │
 ├── agentic_planner.py         # Decision-making engine
 ├── conversation_memory.py     # Session management
 ├── calculator_tool.py         # Arithmetic operations
 │
 ├── data/
-│   └── products.json          # 35 drinkware products
+│   ├── products_drinkware.jsonl           # 35 drinkware products (JSONL)
+│   ├── outlets_kuala_lumpur_selangor.jsonl  # 253 outlets (JSONL)
+│   └── outlets_metadata.json              # Outlet metadata
 │
-└── chroma_db/                 # Local vector database (generated)
+├── chroma_db/                 # Local vector database (generated)
+│   └── [Generated files]
+│
+├── commands/                  # Custom commands (empty/unused)
+│
+└── venv/                      # Python virtual environment
 ```
 
 ---
