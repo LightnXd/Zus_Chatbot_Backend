@@ -70,6 +70,11 @@ class CalculatorTool:
                 if re.search(r'\d', match) and re.search(r'[\+\-\*\/\%]', match):
                     return match.strip()
         
+        # Attempt to parse expressions that may contain number words
+        expr = self._words_to_expression(text)
+        if expr:
+            return expr
+
         word_to_op = {
             'plus': '+',
             'add': '+',
@@ -94,6 +99,119 @@ class CalculatorTool:
                 if match:
                     return f"{match.group(1)} {op} {match.group(2)}"
         
+        return None
+
+    def _words_to_expression(self, text: str) -> Optional[str]:
+        """
+        Convert a natural-language expression with number words into a numeric expression.
+        Example: 'four plus 3 times six' -> '4 + 3 * 6'
+        """
+        if not text or not isinstance(text, str):
+            return None
+
+        # Normalize
+        s = text.lower()
+        s = s.replace('-', ' ')
+        s = s.replace(',', ' ')
+
+        # Map operator phrases to symbols
+        op_patterns = {
+            r'\bplus\b': '+',
+            r'\badd\b': '+',
+            r'\bminus\b': '-',
+            r'\bsubtract\b': '-',
+            r'\btimes\b': '*',
+            r'\bx\b': '*',
+            r'\bmultiplied by\b': '*',
+            r'\bmultiply by\b': '*',
+            r'\bdivided by\b': '/',
+            r'\bdivide by\b': '/',
+            r'\bover\b': '/',
+            r'\bmodulo\b': '%',
+            r'\bmod\b': '%',
+            r'\bto the power of\b': '**',
+            r'\bpower of\b': '**'
+        }
+        for pat, sym in op_patterns.items():
+            s = re.sub(pat, f' {sym} ', s)
+
+        tokens = s.split()
+
+        # number word maps
+        units = {
+            'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+            'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+            'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14,
+            'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18,
+            'nineteen': 19
+        }
+        tens = {
+            'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
+            'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90
+        }
+        scales = {'hundred': 100, 'thousand': 1000, 'million': 1000000}
+
+        def parse_number_words(seq):
+            total = 0
+            current = 0
+            for word in seq:
+                if word in units:
+                    current += units[word]
+                elif word in tens:
+                    current += tens[word]
+                elif word in scales:
+                    if current == 0:
+                        current = 1
+                    current *= scales[word]
+                    total += current
+                    current = 0
+                else:
+                    # unknown token, can't parse
+                    return None
+            return total + current
+
+        out_tokens = []
+        i = 0
+        while i < len(tokens):
+            t = tokens[i]
+            # if token is an operator symbol or parentheses
+            if re.fullmatch(r'[\+\-\*\/\%\(\)\*\*]+', t):
+                out_tokens.append(t)
+                i += 1
+                continue
+
+            # if token is numeric already
+            if re.fullmatch(r'\d+(?:\.\d+)?', t):
+                out_tokens.append(t)
+                i += 1
+                continue
+
+            # try to parse a run of number words
+            j = i
+            seq = []
+            while j < len(tokens) and (tokens[j] in units or tokens[j] in tens or tokens[j] in scales):
+                seq.append(tokens[j])
+                j += 1
+
+            if seq:
+                val = parse_number_words(seq)
+                if val is None:
+                    # failed to parse; bail to next token
+                    i += 1
+                else:
+                    out_tokens.append(str(val))
+                    i = j
+            else:
+                # unknown token like words 'what', 'is', etc. skip
+                i += 1
+
+        if not out_tokens:
+            return None
+
+        expr = ' '.join(out_tokens)
+        # Final validation: should contain at least one digit and one operator
+        if re.search(r'\d', expr) and re.search(r'[\+\-\*\/\%]', expr):
+            return expr
         return None
     
     def calculate(self, expression: str) -> Dict[str, Any]:
