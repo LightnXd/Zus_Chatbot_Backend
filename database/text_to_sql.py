@@ -38,17 +38,6 @@ class OutletTextToSQL:
         # Get Supabase client for direct query execution
         from .supabase_schema import get_supabase_client
         self.supabase = get_supabase_client()
-        # Optional: prefer a direct Postgres connection for Text->SQL execution
-        # Set `TEXTSQL_DATABASE_URL` in server-side env to make Text->SQL use a restricted DB role
-        self.textsql_dsn = os.getenv("TEXTSQL_DATABASE_URL")
-        self._have_psycopg = False
-        if self.textsql_dsn:
-            try:
-                import psycopg
-                self.psycopg = psycopg
-                self._have_psycopg = True
-            except Exception as e:
-                logger.warning("TEXTSQL_DATABASE_URL is set but psycopg is not available: %s", e)
         
         # Create a custom prompt for SQL generation
         self.sql_prompt = ChatPromptTemplate.from_messages([
@@ -141,63 +130,12 @@ Return ONLY the SQL query, no explanations."""),
             List of result dictionaries
         """
         try:
-            # If a direct Postgres DSN is configured and psycopg is available, prefer executing there
-            if self.textsql_dsn and self._have_psycopg:
-                logger.info("TEXTSQL_DATABASE_URL present — attempting direct Postgres execution (will not log DSN)")
-                try:
-                    return self._execute_with_textsql_conn(sql_query)
-                except Exception as e:
-                    logger.warning("Direct TEXTSQL execution failed, falling back to Supabase: %s", e)
-
-            # Fallback to Supabase PostgREST API
-            logger.info("Using Supabase PostgREST fallback for SQL execution")
+            # Parse SQL and use Supabase PostgREST API
             return self._execute_with_postgrest(sql_query)
-
+                
         except Exception as e:
             logger.error(f"Error executing SQL: {e}")
             return []
-
-    def _execute_with_textsql_conn(self, sql_query: str) -> List[Dict]:
-        """
-        Execute SQL directly using the DSN provided in `TEXTSQL_DATABASE_URL`.
-        This runs the query as the DB role contained in that DSN (e.g., the restricted `agent` role).
-        Returns list of dict rows or count for COUNT queries.
-        """
-        conn = None
-        try:
-            conn = self.psycopg.connect(self.textsql_dsn)
-            with conn.cursor() as cur:
-                # Log current DB user (confirm which role the DSN is using)
-                try:
-                    cur.execute("SELECT current_user;")
-                    user_row = cur.fetchone()
-                    logger.info("Connected to Postgres as user: %s", user_row[0] if user_row else "(unknown)")
-                except Exception:
-                    # non-fatal — continue
-                    logger.debug("Could not read current_user from Postgres")
-
-                cur.execute(sql_query)
-
-                # If COUNT(*) single-column result
-                if cur.description and len(cur.description) == 1 and cur.description[0].name.lower() in ("count", "count(*)"):
-                    row = cur.fetchone()
-                    return [{"count": int(row[0]) if row and row[0] is not None else 0}]
-
-                # No columns (e.g., DDL) — return empty
-                if not cur.description:
-                    return []
-
-                cols = [d.name for d in cur.description]
-                rows = cur.fetchall()
-                results = [dict(zip(cols, row)) for row in rows]
-                return results
-
-        finally:
-            if conn:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
     
     def _execute_with_postgrest(self, sql_query: str) -> List[Dict]:
         """
