@@ -32,9 +32,11 @@ COPY services/ ./services/
 COPY routes/ ./routes/
 COPY database/ ./database/
 COPY data/ ./data/
-COPY chroma_db ./chroma_db
+
+# Run setup to initialize ChromaDB (products + guardrail patterns)
+RUN python setup_backend.py || echo "Setup completed with warnings"
 
 EXPOSE 8000
 
-# Runtime setup: Model downloads on first use
+# Runtime: Start the application
 CMD exec python -u start.py

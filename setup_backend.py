@@ -137,7 +137,61 @@ except Exception as e:
 
 print()
 
-# Step 2: Load Outlets to Supabase
+# Step 2: Initialize Guardrail Vector Database
+print("Step 2: Building Guardrail Vector Database...")
+print("-" * 60)
+
+try:
+    # Load malicious questions
+    malicious_file = data_dir / "malicious_questions.jsonl"
+    
+    if not malicious_file.exists():
+        print(f"⚠️  WARNING: {malicious_file} not found!")
+        print("   Guardrail protection will be limited")
+    else:
+        print(f"Loading malicious patterns from {malicious_file}...")
+        
+        guardrail_collection_name = "malicious_questions"
+        guardrail_vector_store = Chroma(
+            collection_name=guardrail_collection_name,
+            persist_directory=db_location,
+            embedding_function=embeddings
+        )
+        
+        # Check if already populated
+        count = guardrail_vector_store._collection.count()
+        if count > 0:
+            print(f"ℹ️  Guardrail collection already has {count} patterns")
+        else:
+            questions = []
+            metadatas = []
+            ids = []
+            
+            with open(malicious_file, 'r', encoding='utf-8') as f:
+                for idx, line in enumerate(f):
+                    data = json.loads(line)
+                    questions.append(data['question'])
+                    metadatas.append({'category': data['category']})
+                    ids.append(f"malicious_{idx}")
+            
+            if questions:
+                print(f"Adding {len(questions)} malicious patterns to Chroma...")
+                guardrail_vector_store.add_texts(
+                    texts=questions,
+                    metadatas=metadatas,
+                    ids=ids
+                )
+                print(f"✅ Guardrail DB created with {len(questions)} patterns")
+            else:
+                print("⚠️  No malicious patterns to add")
+                
+except Exception as e:
+    print(f"⚠️  WARNING: Failed to build Guardrail DB - {e}")
+    print("   Guardrail will use LLM-only validation")
+
+print()
+
+# Step 3: Load Outlets to Supabase
 print("Step 2: Loading Outlets to Supabase...")
 print("-" * 60)
 

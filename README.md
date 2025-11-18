@@ -109,6 +109,7 @@
    
    This will:
    - Load 35 drinkware products into ChromaDB
+   - Load 38+ malicious question patterns for guardrail protection
    - Create local vector embeddings
    - Initialize `chroma_db/` directory
 
@@ -164,6 +165,7 @@ Zus_Chatbot_Backend/
 ├── services/
 │   ├── product_service.py     # Product retrieval + sorting
 │   ├── outlet_service.py      # Text-to-SQL outlet search
+│   ├── guardrail_service.py   # Malicious content detection
 │   └── search_routing.py      # Legacy routing logic
 │
 ├── database/
@@ -180,7 +182,8 @@ Zus_Chatbot_Backend/
 ├── data/
 │   ├── products_drinkware.jsonl           # 35 drinkware products (JSONL)
 │   ├── outlets_kuala_lumpur_selangor.jsonl  # 253 outlets (JSONL)
-│   └── outlets_metadata.json              # Outlet metadata
+│   ├── outlets_metadata.json              # Outlet metadata
+│   └── malicious_questions.jsonl          # 38+ malicious patterns for guardrail
 │
 ├── chroma_db/                 # Local vector database (generated)
 │   └── [Generated files]

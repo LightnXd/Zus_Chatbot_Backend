@@ -13,6 +13,7 @@ from agentic_planner import get_planner, ActionType
 from calculator_tool import get_calculator
 from services.product_service import retrieve_products
 from services.outlet_service import get_outlet_info, count_outlets_from_response
+from services.guardrail_service import get_guardrail_service
 from config.app_config import SYSTEM_TEMPLATE
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,20 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
             raise HTTPException(status_code=400, detail="Question cannot be empty")
         
         session_id = request.session_id or str(uuid.uuid4())
+        
+        # GUARDRAIL CHECK: Validate content safety BEFORE processing
+        guardrail = get_guardrail_service()
+        is_safe, reason = guardrail.check_malicious(question)
+        
+        if not is_safe:
+            # Content flagged as malicious - return error WITHOUT saving to memory
+            logger.warning(f"Malicious request blocked for session {session_id}: {reason}")
+            raise HTTPException(
+                status_code=400,
+                detail="We detected malicious request, your request is denied"
+            )
+        
+        # Content is safe, proceed with normal flow
         memory = get_memory_manager()
         
         conversation_history = memory.get_conversation_context(session_id, n=3)
