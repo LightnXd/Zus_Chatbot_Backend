@@ -47,11 +47,21 @@ async def handle_chat(request: ChatRequest, model, retriever, text_to_sql, outle
         is_safe, reason = guardrail.check_malicious(question)
         
         if not is_safe:
-            # Content flagged as malicious - return error WITHOUT saving to memory
+            # Content flagged as malicious - return response WITHOUT saving to memory
             logger.warning(f"Malicious request blocked for session {session_id}: {reason}")
-            raise HTTPException(
-                status_code=400,
-                detail="We detected malicious request, your request is denied"
+            return ChatResponse(
+                response="We detected malicious request, your request is denied",
+                products_found=0,
+                outlets_found=0,
+                search_info={
+                    "searched_products": False,
+                    "searched_outlets": False,
+                    "mode": "blocked",
+                    "has_conversation_history": False,
+                    "context_metadata": {}
+                },
+                session_id=session_id,
+                planning_info=None
             )
         
         # Content is safe, proceed with normal flow

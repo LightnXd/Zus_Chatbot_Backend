@@ -19,12 +19,14 @@ class GuardrailService:
     Two-step guardrail service for content safety
     """
     
-    def __init__(self, similarity_threshold: float = 0.75):
+    def __init__(self, distance_threshold: float = 1.2):
         """
         Args:
-            similarity_threshold: Minimum similarity score to flag as malicious (0.0-1.0)
+            distance_threshold: Maximum distance score to flag as malicious (lower = more similar)
+                               For squared L2 distance: 0.0=identical, ~1.0=similar, ~1.5+=different
+                               Recommended: 1.0-1.3 (balance between catching attacks and avoiding false positives)
         """
-        self.similarity_threshold = similarity_threshold
+        self.similarity_threshold = distance_threshold
         self.malicious_vectorstore = None
         self.malicious_retriever = None
         self.llm = None
@@ -55,7 +57,7 @@ class GuardrailService:
                 count = self.malicious_vectorstore._collection.count()
             
             logger.info(f"Guardrail RAG initialized with {count} malicious patterns")
-            logger.info(f"Similarity threshold set to: {self.similarity_threshold}")
+            logger.info(f"Distance threshold set to: {self.similarity_threshold} (lower distance = more similar)")
             
             # Create retriever
             self.malicious_retriever = self.malicious_vectorstore.as_retriever(
@@ -158,32 +160,33 @@ class GuardrailService:
         """
         try:
             # Use similarity_search_with_score to get actual scores
+            # NOTE: ChromaDB returns DISTANCE scores where LOWER = MORE SIMILAR
             results = self.malicious_vectorstore.similarity_search_with_score(
                 question, 
                 k=3
             )
             
-            # Filter by threshold and get highest score
-            matching_results = [(doc, score) for doc, score in results if score >= self.similarity_threshold]
+            # Filter by threshold - for distance scores, LOWER than threshold means match
+            matching_results = [(doc, score) for doc, score in results if score <= self.similarity_threshold]
             
             if matching_results:
                 # Found similar malicious patterns
-                highest_score = max(score for _, score in matching_results)
+                lowest_distance = min(score for _, score in matching_results)
                 categories = [doc.metadata.get('category', 'unknown') for doc, _ in matching_results]
                 category_str = ', '.join(set(categories))
                 
-                # Log similarity scores for debugging
-                logger.warning(f"RAG flagged question: '{question[:50]}...' - Highest similarity: {highest_score:.2f} (threshold: {self.similarity_threshold})")
+                # Log distance scores for debugging
+                logger.warning(f"RAG flagged question: '{question[:50]}...' - Lowest distance: {lowest_distance:.2f} (threshold: {self.similarity_threshold})")
                 for idx, (doc, score) in enumerate(matching_results):
-                    logger.info(f"  Match {idx+1}: similarity={score:.2f}, category={doc.metadata.get('category', 'unknown')}")
+                    logger.info(f"  Match {idx+1}: distance={score:.2f}, category={doc.metadata.get('category', 'unknown')}")
                 
-                return False, f"RAG detected pattern match: {category_str} (similarity: {highest_score:.2f})"
+                return False, f"RAG detected pattern match: {category_str} (distance: {lowest_distance:.2f})"
             
             # No similar malicious patterns found
-            # Get highest score even if below threshold for logging
+            # Get lowest distance even if above threshold for logging
             if results:
-                highest_below = max(score for _, score in results)
-                logger.info(f"RAG check passed: '{question[:50]}...' - Highest similarity: {highest_below:.2f} (below threshold {self.similarity_threshold})")
+                lowest_distance = min(score for _, score in results)
+                logger.info(f"RAG check passed: '{question[:50]}...' - Lowest distance: {lowest_distance:.2f} (above threshold {self.similarity_threshold})")
             else:
                 logger.info(f"RAG check passed: '{question[:50]}...' - No similar patterns found")
             
@@ -254,5 +257,6 @@ def get_guardrail_service() -> GuardrailService:
     """Get or create global guardrail service instance"""
     global _guardrail_service
     if _guardrail_service is None:
-        _guardrail_service = GuardrailService(similarity_threshold=0.65)
+        # Threshold 1.25: catches close matches while allowing normal questions (1.26+)
+        _guardrail_service = GuardrailService(distance_threshold=1.25)
     return _guardrail_service
