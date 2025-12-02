@@ -5,14 +5,11 @@
 **Optional:**
 - Scrape and import newest ZUS product and outlet information using https://github.com/LightnXd/Zus_Scraper
 
-### Option 1: Railway Deployment (Production)
+### Option 1: Render Deployment (Production)
 
 **Prerequisites:**
-- Railway account ([railway.app](https://railway.app))
-- GitHub repository connected to Railway
-
-**Optional:**
-- Scrape and import newest ZUS product and outlet information using https://github.com/LightnXd/Zus_Scraper
+- Render account ([render.com](https://render.com))
+- GitHub repository with your code
 
 **Steps:**
 
@@ -21,42 +18,38 @@
    git push origin main
    ```
 
-2. **Create Railway project:**
-   - Go to [railway.app](https://railway.app)
-   - Click "New Project" → "Deploy from GitHub repo"
-   - Select your repository
+2. **Create a new Web Service on Render:**
+   - Go to [render.com](https://render.com)
+   - Click "New Web Service"
+   - Connect your GitHub repository
 
 3. **Configure environment variables:**
-   ```env
-   GROQ_API_KEY=your_groq_api_key_here
-   SUPABASE_URL=your_supabase_url
-   SUPABASE_KEY=your_supabase_anon_key
-   PORT=8000
-   CORS_ORIGINS=add all domain that able to access backend seperated by (,) (example: https://your-frontend.vercel.app,http://localhost:3000)
-   ```
+   - Add the following environment variables in the Render dashboard:
+     - `GROQ_API_KEY=your_groq_api_key_here`
+     - `SUPABASE_URL=your_supabase_url`
+     - `SUPABASE_KEY=your_supabase_anon_key`
+     - `PORT=8000`
+     - `CORS_ORIGINS=add all domain that able to access backend separated by (,) (example: https://your-frontend.vercel.app,http://localhost:3000)`
 
-4. **Railway auto-detects:**
-   - `Dockerfile` for containerized deployment
-   - `railway.json` for build configuration
-   - Automatic HTTPS and domain provisioning
+4. **Set build and start commands:**
+   - **Build Command:**
+     ```bash
+     pip install -r requirements-backend.txt
+     ```
+   - **Start Command:**
+     ```bash
+     python start.py
+     ```
 
 5. **Deploy:**
-   - Railway automatically builds and deploys
-   - Get your deployment URL: `https://your-app.up.railway.app`
+   - Render will automatically build and deploy your service
+   - Get your deployment URL from the Render dashboard
 
-**Railway Configuration (`railway.json`):**
-```json
-{
-  "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
-  },
-  "deploy": {
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  }
-}
-```
+**Note:**
+- Make sure you have a `Procfile` with the following content (already included):
+  ```
+  web: python start.py
+  ```
 
 ---
 
@@ -147,7 +140,7 @@ Zus_Chatbot_Backend/
 ├── setup_backend.py            # ChromaDB initialization
 ├── requirements-backend.txt    # Python dependencies
 ├── Dockerfile                  # Multi-stage Docker build
-├── railway.json                # Railway deployment config
+├── Procfile                    # Render deployment config
 ├── .env.backend                # Environment variables (local)
 ├── .dockerignore               # Docker ignore rules
 ├── .gitignore                  # Git ignore rules
