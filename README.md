@@ -1,4 +1,5 @@
 # ZUS Drinkware Chatbot - Backend
+Try it now on [https://zus-chatbot-frontend-jet.vercel.app](https://zus-chatbot-frontend-jet.vercel.app)
 
 ## 🚀 Quick Setup
 
